@@ -5,16 +5,7 @@ import (
 	"fmt"
 	"github.com/shxsun/exec"
 	"math/rand"
-	"net/rpc"
-	"time"
 )
-
-type Container struct {
-	Name    string
-	Args    []string
-	Timeout time.Duration
-	Kill    bool
-}
 
 var logs = make(map[string]*Log, 1000)
 
@@ -25,12 +16,6 @@ type Log struct {
 }
 
 type RpcServer int
-
-type Response struct {
-	Uid  int
-	Msg  string
-	Code int
-}
 
 func (rs *RpcServer) Run(r Container, w *string) error {
 	cmd := exec.Command(r.Name, r.Args...)
@@ -48,11 +33,4 @@ func (rs *RpcServer) Run(r Container, w *string) error {
 		return err
 	}
 	return nil
-}
-
-func main() {
-	srv := new(RpcServer)
-	rpc.Register(srv)
-	rpc.HandleHTTP()
-	fmt.Println("Client")
 }
