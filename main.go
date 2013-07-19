@@ -47,8 +47,6 @@ func push(ch chan string, data string) {
 
 // file copy function
 func copywork(s string, d string) {
-	//time.Sleep(time.Second * 1)
-	//fmt.Println("jetfire", "-host", d, "-u", "work", "-dir", filepath.Dir(Path),
 	beelog.Info("copywork", s, "--->", d)
 	cmd := exec.Command("jetfire", "-host", d, "-u", "work", "-dir", filepath.Dir(Path),
 		"wget", "-nv", "--limit-rate=10m", "ftp://"+s+"/"+Path, "-O", filepath.Base(Path))
