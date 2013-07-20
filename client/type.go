@@ -12,7 +12,15 @@ type Container struct {
 }
 
 type Response struct {
-	Uid  int
-	Msg  string
-	Code int
+	Uid    string
+	Msg    string
+	Stdout []byte
+	Code   int
+}
+
+type PsResult struct {
+	Uid     string
+	Name    string
+	Time    time.Time
+	Running bool
 }
