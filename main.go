@@ -32,13 +32,15 @@ func initSource(S []string) {
 }
 func initDest(D []string) {
 	left = len(D)
-	log.Println("Total: ", left)
+	log.Println("Total target: ", len(D))
 	for _, d := range D {
 		beelog.Trace("add dst", d)
 		dst <- d
 	}
 	beelog.Trace("dst done")
 }
+
+// push to the todo channel
 func push(ch chan string, data string) {
 	go func() {
 		ch <- data
@@ -48,8 +50,9 @@ func push(ch chan string, data string) {
 // file copy function
 func copywork(s string, d string) {
 	beelog.Info("copywork", s, "--->", d)
-	cmd := exec.Command("jetfire", "-host", d, "-u", "work", "-dir", filepath.Dir(Path),
-		"wget", "-nv", "--limit-rate=10m", "ftp://"+s+"/"+Path, "-O", filepath.Base(Path))
+	wgetParams := []string{"wget", "-X", "-nv", "--limit-rate=10m", "ftp://"+s+"/"+Path, "-O", filepath.Base(Path)}
+	fireParams := []string{"jetfire", "--host", d, "-u", "work", "--dir", filepath.Dir(Path)}
+	cmd := exec.Command("fire", append(fireParams, wgetParams...)...)
 	out, err := cmd.CombinedOutput()
 	if false {
 		fmt.Print(string(out))
@@ -63,6 +66,7 @@ func copywork(s string, d string) {
 	} else {
 		beelog.Warn("Fail copy from", s, "to", d)
 		push(src, s)
+		left -= 1
 		//push(dst, d)
 	}
 }
