@@ -7,19 +7,22 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"strings"
 	"time"
 )
 
 var fsrv struct {
-	Daemon bool `short:"d" long:"daemon" description:"run as server" default:"false"`
-	Port   int  `short:"p" long:"port" description:"port to connect or serve" default:"4456"`
+	Daemon     bool   `short:"d" long:"daemon" description:"run as server" default:"false"`
+	Port       int    `short:"p" long:"port" description:"port to connect or serve" default:"4456"`
+	FileServer string `long:"fs" description:"open a http file server" default:"/tmp:/home"`
 }
 
 var frun struct {
-	Host       string   `short:"H" long:"host" description:"host to connect" default:"localhost"`
-	Timeout    string   `short:"t" long:"timeout" description:"time out [s|m|h]" default:"0s"`
-	Background bool     `short:"b" long:"background" description:"run in background"`
-	Env        []string `short:"e" long:"env" description:"add env to runner eg PATH=/bin"`
+	Host        string   `short:"H" long:"host" description:"host to connect" default:"localhost"`
+	Timeout     string   `short:"t" long:"timeout" description:"time out [s|m|h]" default:"0s"`
+	Background  bool     `short:"b" long:"background" description:"run in background"`
+	Env         []string `short:"e" long:"env" description:"add env to runner,multi support. eg -e PATH=/bin -e TMPDIR=/tmp"`
+	DialTimeout string   `long:"dialtimeout" description:"dial timeout,unit seconds" default:"2s"`
 }
 var ftype struct {
 	Type string `short:"m" long:"type" description:"type [run|ps|wait]" default:"run" 	`
@@ -41,6 +44,11 @@ func main() {
 		srv := new(RpcServer)
 		rpc.Register(srv)
 		rpc.HandleHTTP()
+		if fsrv.FileServer != "" {
+			for _, path := range strings.Split(fsrv.FileServer, ":") {
+				http.Handle(path, http.StripPrefix(path, http.FileServer(http.Dir(path))))
+			}
+		}
 		l, e := net.Listen("tcp", fmt.Sprintf(":%d", fsrv.Port))
 		if e != nil {
 			log.Fatal(e)
