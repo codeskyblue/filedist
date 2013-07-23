@@ -2,5 +2,11 @@
 #
 #
 
+cd `dirname $0`
+
+cd ../
 go build
-./filedist -s $HOSTNAME --df=dest.txt -p ${1:-"/home/work/c"} | tee result.txt
+cd $OLDPWD
+
+path=${1:-"/home/work/c"}
+../filedist -s $HOSTNAME --df=dest.txt -p ${path} | tee result.txt

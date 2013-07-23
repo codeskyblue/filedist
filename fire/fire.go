@@ -17,7 +17,7 @@ var fsrv struct {
 
 var frun struct {
 	Host       string   `short:"H" long:"host" description:"host to connect" default:"localhost"`
-	Timeout    string   `short:"t" long:"timeout" description:"time out [s|m|h]" default:"0s"`
+	Timeout    string   `short:"t" long:"timeout" description:"time out [s|m|h]" default:"10m"`
 	Background bool     `short:"b" long:"background" description:"run in background"`
 	Env        []string `short:"e" long:"env" description:"add env to runner eg PATH=/bin"`
 }
