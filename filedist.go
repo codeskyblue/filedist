@@ -10,11 +10,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os/exec"
-//	"path/filepath"
+	//	"path/filepath"
+	"os"
 	"runtime"
 	"strings"
 	"time"
-    "os"
 )
 
 var src = make(chan string)
@@ -51,27 +51,27 @@ func push(ch chan string, data string) {
 // file copy function
 func copywork(s string, d string) {
 	wgetParams := []string{"wget", "-nv", "--limit-rate=10m", "ftp://" + s + "/" + Path, "-O", Path} //filepath.Base(Path)}
-	fireParams := []string{"--host", d, "-t", "2s"} //, "--dir", filepath.Dir(Path)}
+	fireParams := []string{"--host", d, "-t", "2s"}                                                  //, "--dir", filepath.Dir(Path)}
 	params := append(fireParams, wgetParams...)
 	//fmt.Println(params)
-    cmd := exec.Command("fire", append(fireParams, "rm", "-f", Path)...)
-    err := cmd.Run()
-    if err != nil {
-       goto OK_JUDGE
-    }
+	cmd := exec.Command("fire", append(fireParams, "rm", "-f", Path)...)
+	err := cmd.Run()
+	if err != nil {
+		goto OK_JUDGE
+	}
 	cmd = exec.Command("fire", params...)
 	_, err = cmd.CombinedOutput()
 
 OK_JUDGE:
 	var ok = (err == nil)
 	if ok {
-        fmt.Println(d, "SUCC")
+		fmt.Println(d, "SUCC")
 		//beelog.Info("Succ copy from", s, "to", d)
 		left -= 1 // TODO: maybe need lock
 		push(src, s)
 		push(src, d)
 	} else {
-        fmt.Println(d, "FAIL")
+		fmt.Println(d, "FAIL")
 		//beelog.Warn("Fail copy from", s, "to", d)
 		push(src, s)
 		left -= 1
@@ -102,7 +102,7 @@ func main() {
 	var opts struct {
 		Source   []string `short:"s" long:"src" description:"source host"`
 		Dest     []string `short:"d" long:"dst" description:"destination host"`
-		DestFile string   `long:"df" description:"destination file"`
+		DestFile string   `short:"D" long:"dhost" description:"destination host from file"`
 		Path     string   `short:"p" long:"path" description:"file path" default:"/home/work/a"`
 	}
 	_, err := flags.Parse(&opts)
@@ -125,12 +125,12 @@ func main() {
 	beelog.Debug("sources:", Source)
 	beelog.Info("path   :", opts.Path)
 
-    var confirm string
-    fmt.Print("confirm y/n:? ")
-    fmt.Fscanf(os.Stdin, "%s", &confirm)
-    if strings.TrimSpace(confirm) != "y" {
-        os.Exit(0)
-    }
+	var confirm string
+	fmt.Print("confirm y/n:? ")
+	fmt.Fscanf(os.Stdin, "%s", &confirm)
+	if strings.TrimSpace(confirm) != "y" {
+		os.Exit(0)
+	}
 
 	startTime := time.Now()
 	start()

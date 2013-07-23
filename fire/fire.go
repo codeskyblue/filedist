@@ -14,7 +14,7 @@ import (
 var fsrv struct {
 	Daemon     bool   `short:"d" long:"daemon" description:"run as server" default:"false"`
 	Port       int    `short:"p" long:"port" description:"port to connect or serve" default:"4456"`
-	FileServer string `long:"fs" description:"open a http file server" default:"/tmp:/home"`
+	FileServer string `long:"fs" description:"open a http file server" default:"/tmp/:/home/"`
 }
 
 var frun struct {
