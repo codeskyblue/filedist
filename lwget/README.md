@@ -1,5 +1,5 @@
 ## lwget
-base on wget, offer md5sum output, when finished downloading.
+base on wget, offer md5sum output when finished downloading.
 
 ## usage
     lwget [OPTIONS]  <URL> <target>
@@ -22,7 +22,7 @@ will save as jquery.min.js
 
     lwget --md5sum=12334234564574562 http://code.jquery.com/jquery-1.10.1.min.js jquery.min.js
 
-this is an error md5sum, and this will output 
+this is an error md5sum, and this will output, exit !0
 
     expect (12334234564574562) but got (33d85132f0154466fc017dd05111873d)
 
@@ -30,5 +30,5 @@ this is an error md5sum, and this will output
 
     lwget -l 1m --timeout=2s http://www.ubuntu.com/start-download?distro=desktop&bits=64&release=lts ubuntu.iso
 
-this will raise timeout.
+this will raise timeout. exit !0
 
