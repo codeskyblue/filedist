@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/shxsun/exec"
-	"math/rand"
+	"github.com/shxsun/filedist/fire/utils"
 	"strings"
 	"sync"
 )
 
 var logs = make(map[string]*Log, 1000)
+var tidx = utils.NewTruncIndex()
 
 type State struct {
 	mu      sync.Mutex
@@ -41,18 +42,19 @@ func (rs *RpcServer) Run(r Container, w *Response) error {
 	cmd := exec.Command(r.Name, r.Args...)
 	cmd.Timeout = r.Timeout
 	cmd.IsClean = r.Kill
-	uid := fmt.Sprintf("%d", rand.Int())
-	var l = Log{}
-	l.State.result = make(chan error)
-	cmd.Stdout = &l.Stdout
-	cmd.Stderr = &l.Stdout
-	l.Cmd = cmd
-	logs[uid] = &l
+	uid := tidx.New()
+	var g = Log{}
+	g.State.result = make(chan error)
+	cmd.Stdout = &g.Stdout
+	cmd.Stderr = &g.Stdout
+	g.Cmd = cmd
+	logs[uid] = &g
 	err := cmd.Start()
-	l.Running = true
+	g.Running = true
 	go func() {
-		l.result <- l.Cmd.Wait()
+		g.result <- g.Cmd.Wait()
 	}()
+	go g.State.Wait()
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -61,12 +63,22 @@ func (rs *RpcServer) Run(r Container, w *Response) error {
 	return nil
 }
 
-func (rs *RpcServer) Wait(id string, w *Response) error {
-	l, ok := logs[id]
-	if !ok {
-		return fmt.Errorf("log id:(%s) not exists", id)
+func (rs *RpcServer) Kill(id string, w *Response) error {
+	uid, err := tidx.Get(id)
+	if err != nil {
+		return err
 	}
-	err := l.Wait()
+	g := logs[uid]
+	return g.Cmd.KillAll()
+}
+
+func (rs *RpcServer) Wait(id string, w *Response) error {
+	uid, err := tidx.Get(id)
+	if err != nil {
+		return err
+	}
+	g := logs[uid]
+	err = g.Wait()
 
 	if err != nil {
 		errmsg := err.Error()
@@ -77,18 +89,40 @@ func (rs *RpcServer) Wait(id string, w *Response) error {
 			w.Code = 128
 		}
 	}
-	w.Stdout = l.Stdout.Bytes()
+	w.Stdout = g.Stdout.Bytes()
 	return nil
 }
 
-func (rs *RpcServer) Ps(id []string, out *[]PsResult) error {
-	// FIXME: id not used at present
+func (rs *RpcServer) Ps(ids []string, out *[]PsResult) error {
+	// no input, ouput all
+	// FIXME: result not sorted
+	if len(ids) == 0 {
+		for uid, g := range logs {
+			pr := PsResult{}
+			pr.Name = g.Cmd.Args[0]
+			pr.Uid = uid
+			pr.Running = g.Running
+			*out = append(*out, pr)
+		}
+		return nil
+	}
+
+	vis := make(map[string]bool)
 	*out = make([]PsResult, 0)
-	for uid, l := range logs {
+	for _, id := range ids {
+		uid, err := tidx.Get(id)
+		if err != nil {
+			return err
+		}
+		if vis[uid] == true {
+			continue
+		}
+		vis[uid] = true
+		g := logs[uid]
 		pr := PsResult{}
-		pr.Name = l.Cmd.Args[0]
+		pr.Name = g.Cmd.Args[0]
 		pr.Uid = uid
-		pr.Running = l.Running
+		pr.Running = g.Running
 		*out = append(*out, pr)
 	}
 	return nil
