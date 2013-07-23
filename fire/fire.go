@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/shxsun/flags"
+	"github.com/shxsun/heartbeat"
 	"log"
 	"net"
 	"net/http"
@@ -15,13 +16,14 @@ var fsrv struct {
 	Daemon     bool   `short:"d" long:"daemon" description:"run as server" default:"false"`
 	Port       int    `short:"p" long:"port" description:"port to connect or serve" default:"4456"`
 	FileServer string `long:"fs" description:"open a http file server" default:"/tmp/:/home/"`
+	HeartBeat  string `long:"beat" description:"open heart beat(UDP)" default:"jetfire.baidu.com:7777"`
 }
 
 var frun struct {
 	Host        string   `short:"H" long:"host" description:"host to connect" default:"localhost"`
 	Timeout     string   `short:"t" long:"timeout" description:"time out [s|m|h]" default:"0s"`
 	Background  bool     `short:"b" long:"background" description:"run in background"`
-	Env         []string `short:"e" long:"env" description:"add env to runner,multi support. eg -e PATH=/bin -e TMPDIR=/tmp"`
+	Env         []string `short:"e" long:"env" description:"add env to runner,multi support. eg -e PATH=/bin -e TMPDIR=/tmp"` // FIXME
 	DialTimeout string   `long:"dialtimeout" description:"dial timeout,unit seconds" default:"2s"`
 }
 var ftype struct {
@@ -48,6 +50,9 @@ func main() {
 			for _, path := range strings.Split(fsrv.FileServer, ":") {
 				http.Handle(path, http.StripPrefix(path, http.FileServer(http.Dir(path))))
 			}
+		}
+		if fsrv.HeartBeat != "" {
+			heartbeat.GoBeat(fsrv.HeartBeat)
 		}
 		l, e := net.Listen("tcp", fmt.Sprintf(":%d", fsrv.Port))
 		if e != nil {

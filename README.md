@@ -59,6 +59,8 @@ The name is "fire". It offer some basic services(execute command, file server)
 	
 	more details of ps（time， args， user， dir ...)
 
+    heartbeat
+
 - filedist
 
     wget result(md5sum check)
