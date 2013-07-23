@@ -10,10 +10,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os/exec"
-	"path/filepath"
+//	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+    "os"
 )
 
 var src = make(chan string)
@@ -49,22 +50,29 @@ func push(ch chan string, data string) {
 
 // file copy function
 func copywork(s string, d string) {
-	beelog.Info("copywork", s, "--->", d)
-	wgetParams := []string{"wget", "-X", "-nv", "--limit-rate=10m", "ftp://"+s+"/"+Path, "-O", filepath.Base(Path)}
-	fireParams := []string{"jetfire", "--host", d, "-u", "work", "--dir", filepath.Dir(Path)}
-	cmd := exec.Command("fire", append(fireParams, wgetParams...)...)
-	out, err := cmd.CombinedOutput()
-	if false {
-		fmt.Print(string(out))
-	}
+	wgetParams := []string{"wget", "-nv", "--limit-rate=10m", "ftp://" + s + "/" + Path, "-O", Path} //filepath.Base(Path)}
+	fireParams := []string{"--host", d, "-t", "2s"} //, "--dir", filepath.Dir(Path)}
+	params := append(fireParams, wgetParams...)
+	//fmt.Println(params)
+    cmd := exec.Command("fire", append(fireParams, "rm", "-f", Path)...)
+    err := cmd.Run()
+    if err != nil {
+       goto OK_JUDGE
+    }
+	cmd = exec.Command("fire", params...)
+	_, err = cmd.CombinedOutput()
+
+OK_JUDGE:
 	var ok = (err == nil)
 	if ok {
-		beelog.Debug("Succ copy from", s, "to", d)
+        fmt.Println(d, "SUCC")
+		//beelog.Info("Succ copy from", s, "to", d)
 		left -= 1 // TODO: maybe need lock
 		push(src, s)
 		push(src, d)
 	} else {
-		beelog.Warn("Fail copy from", s, "to", d)
+        fmt.Println(d, "FAIL")
+		//beelog.Warn("Fail copy from", s, "to", d)
 		push(src, s)
 		left -= 1
 		//push(dst, d)
@@ -115,7 +123,14 @@ func main() {
 
 	beelog.Debug("dest   :", opts.Dest)
 	beelog.Debug("sources:", Source)
-	beelog.Debug("path   :", opts.Path)
+	beelog.Info("path   :", opts.Path)
+
+    var confirm string
+    fmt.Print("confirm y/n:? ")
+    fmt.Fscanf(os.Stdin, "%s", &confirm)
+    if strings.TrimSpace(confirm) != "y" {
+        os.Exit(0)
+    }
 
 	startTime := time.Now()
 	start()
