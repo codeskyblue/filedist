@@ -68,3 +68,14 @@ func cmdPs(id []string, out []PsResult) {
 		fmt.Printf("%-3d %-10s %-10s running:%v\n", idx, pr.Uid, pr.Name, pr.Running)
 	}
 }
+
+func cmdKill(id string) {
+	err := rpcCall("RpcServer.Kill", id, &Response{})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmdHelp() {
+	fmt.Println("Use --help for more help")
+}

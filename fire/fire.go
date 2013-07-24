@@ -30,7 +30,7 @@ var frun struct {
 	DialTimeout string   `long:"dialtimeout" description:"dial timeout,unit seconds" default:"2s"`
 }
 var ftype struct {
-	Type string `short:"m" long:"type" description:"type [run|ps|wait]" default:"run" 	`
+	Type string `short:"m" long:"type" description:"type [run|ps|wait|kill]" default:"run" 	`
 }
 
 func main() {
@@ -92,6 +92,12 @@ func main() {
 	case "ps":
 		r := make([]PsResult, 0)
 		cmdPs(args, r)
+	case "kill":
+		if len(args) != 1 {
+			cmdHelp()
+			return
+		}
+		cmdKill(args[0])
 	default:
 		log.Fatal("need specify a type. use --help for more help")
 	}
