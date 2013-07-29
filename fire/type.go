@@ -19,8 +19,9 @@ type Response struct {
 }
 
 type PsResult struct {
-	Uid     string
-	Name    string
-	Time    time.Time
-	Running bool
+	Uid       string
+	Name      string
+	StartTime time.Time
+	EndTime   time.Time
+	Running   bool
 }

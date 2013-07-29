@@ -64,8 +64,9 @@ func cmdPs(id []string, out []PsResult) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for idx, pr := range out {
-		fmt.Printf("%-3d %-10s %-10s running:%v\n", idx, pr.Uid, pr.Name, pr.Running)
+	fmt.Printf("%-20s %-10s %-10s %s\n", "ID", "TIME", "CMD", "RUNNING")
+	for _, pr := range out {
+		fmt.Printf("%-20s %-10s %-10s %v\n", pr.Uid, pr.StartTime.Format("15:04:05"), pr.Name, pr.Running)
 	}
 }
 

@@ -32,3 +32,5 @@ this is an error md5sum, and this will output, exit !0
 
 this will raise timeout. exit !0
 
+## some other ideas (download and generate md5sum at same time)
+    wget --limit-rate=10m http://code.jquery.com/jquery-1.10.1.min.js -O- | tee jquery.min.js | md5sum

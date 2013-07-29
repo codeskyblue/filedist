@@ -9,4 +9,5 @@ go build
 cd $OLDPWD
 
 path=${1:-"/home/work/c"}
-../filedist -s $HOSTNAME --df=dest.txt -p ${path} | tee result.txt
+../filedist -s $HOSTNAME \
+        --dfile=dest.txt -p ${path} | tee result.txt

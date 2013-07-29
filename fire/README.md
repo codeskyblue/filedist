@@ -29,3 +29,6 @@ The name is "fire". It offer some basic services(execute command, file server)
     #
     # start
     #
+
+### unknown problem
+BUG(ssx): heartbeat: When open heartbeat. When the target machine dies. fire -d quit. Don't know why.

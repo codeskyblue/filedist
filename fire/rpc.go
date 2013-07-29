@@ -7,16 +7,19 @@ import (
 	"github.com/shxsun/filedist/fire/utils"
 	"strings"
 	"sync"
+	"time"
 )
 
 var logs = make(map[string]*Log, 1000)
 var tidx = utils.NewTruncIndex()
 
 type State struct {
-	mu      sync.Mutex
-	result  chan error
-	Running bool
-	Err     error
+	mu        sync.Mutex
+	result    chan error
+	Running   bool
+	Err       error
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 func (s *State) Wait() error {
@@ -25,6 +28,7 @@ func (s *State) Wait() error {
 	if s.Running {
 		s.Err = <-s.result
 		s.Running = false
+		s.EndTime = time.Now()
 	}
 	return s.Err
 }
@@ -36,7 +40,9 @@ type Log struct {
 	State
 }
 
-type RpcServer int
+type RpcServer struct {
+	logs string // FIXME: no use here
+}
 
 func (rs *RpcServer) Run(r Container, w *Response) error {
 	cmd := exec.Command(r.Name, r.Args...)
@@ -45,6 +51,7 @@ func (rs *RpcServer) Run(r Container, w *Response) error {
 	uid := tidx.New()
 	var g = Log{}
 	g.State.result = make(chan error)
+	g.State.StartTime = time.Now()
 	cmd.Stdout = &g.Stdout
 	cmd.Stderr = &g.Stdout
 	g.Cmd = cmd
@@ -102,6 +109,8 @@ func (rs *RpcServer) Ps(ids []string, out *[]PsResult) error {
 			pr.Name = g.Cmd.Args[0]
 			pr.Uid = uid
 			pr.Running = g.Running
+			pr.StartTime = g.State.StartTime
+			pr.EndTime = g.State.EndTime
 			*out = append(*out, pr)
 		}
 		return nil
@@ -123,6 +132,8 @@ func (rs *RpcServer) Ps(ids []string, out *[]PsResult) error {
 		pr.Name = g.Cmd.Args[0]
 		pr.Uid = uid
 		pr.Running = g.Running
+		pr.StartTime = g.State.StartTime
+		pr.EndTime = g.State.EndTime
 		*out = append(*out, pr)
 	}
 	return nil

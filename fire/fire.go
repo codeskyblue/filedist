@@ -14,11 +14,11 @@ import (
 
 var fsrv struct {
 	Daemon     bool     `short:"d" long:"daemon" description:"run as server" default:"false"`
-	Port       int      `short:"p" long:"port" description:"port to connect or serve" default:"4456"`
+	Port       int      `short:"p" long:"port" description:"port to connect or serve" default:"8119"`
 	Unsafe     bool     `long:"unsafe" description:"allow remove client use root to execute command" default:"false"` // FIXME
 	Allow      []string `long:"allow" description:"allow which client can connect server"`                            // FIXME
 	FileServer string   `long:"fs" description:"open a http file server" default:"/tmp/:/home/"`
-	HeartBeat  string   `long:"beat" description:"open heart beat(UDP)" default:"jetfire.baidu.com:7777"`
+	HeartBeat  string   `long:"beat" description:"open heart beat(UDP)" default:""`
 }
 
 var frun struct {
@@ -31,6 +31,25 @@ var frun struct {
 }
 var ftype struct {
 	Type string `short:"m" long:"type" description:"type [run|ps|wait|kill]" default:"run" 	`
+}
+
+func startDaemon() {
+	srv := new(RpcServer)
+	rpc.Register(srv)
+	rpc.HandleHTTP()
+	if fsrv.FileServer != "" {
+		for _, path := range strings.Split(fsrv.FileServer, ":") {
+			http.Handle(path, http.StripPrefix(path, http.FileServer(http.Dir(path))))
+		}
+	}
+	if fsrv.HeartBeat != "" {
+		heartbeat.GoBeat(fsrv.HeartBeat)
+	}
+	l, e := net.Listen("tcp", fmt.Sprintf(":%d", fsrv.Port))
+	if e != nil {
+		log.Fatal(e)
+	}
+	http.Serve(l, nil)
 }
 
 func main() {
@@ -46,22 +65,7 @@ func main() {
 	}
 
 	if fsrv.Daemon {
-		srv := new(RpcServer)
-		rpc.Register(srv)
-		rpc.HandleHTTP()
-		if fsrv.FileServer != "" {
-			for _, path := range strings.Split(fsrv.FileServer, ":") {
-				http.Handle(path, http.StripPrefix(path, http.FileServer(http.Dir(path))))
-			}
-		}
-		if fsrv.HeartBeat != "" {
-			heartbeat.GoBeat(fsrv.HeartBeat)
-		}
-		l, e := net.Listen("tcp", fmt.Sprintf(":%d", fsrv.Port))
-		if e != nil {
-			log.Fatal(e)
-		}
-		http.Serve(l, nil)
+		startDaemon()
 		return
 	}
 
