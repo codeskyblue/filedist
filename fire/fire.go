@@ -15,9 +15,10 @@ import (
 var fsrv struct {
 	Daemon     bool     `short:"d" long:"daemon" description:"run as server" default:"false"`
 	Port       int      `short:"p" long:"port" description:"port to connect or serve" default:"8119"`
-	Unsafe     bool     `long:"unsafe" description:"allow remove client use root to execute command" default:"false"` // FIXME
-	Allow      []string `long:"allow" description:"allow which client can connect server"`                            // FIXME
 	FileServer string   `long:"fs" description:"open a http file server" default:"/tmp/:/home/"`
+	Expire     string   `long:"expire" description:"background job keep time after finished running, at least 10min" default:"24h"`
+	Allow      []string `long:"allow" description:"allow which client can connect server"`                            // FIXME
+	Unsafe     bool     `long:"unsafe" description:"allow remove client use root to execute command" default:"false"` // FIXME
 	HeartBeat  string   `long:"beat" description:"open heart beat(UDP)" default:""`
 }
 
@@ -34,7 +35,7 @@ var ftype struct {
 }
 
 func startDaemon() {
-	srv := new(RpcServer)
+	srv := NewRpcServer()
 	rpc.Register(srv)
 	rpc.HandleHTTP()
 	if fsrv.FileServer != "" {

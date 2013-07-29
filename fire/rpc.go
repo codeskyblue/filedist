@@ -10,9 +10,6 @@ import (
 	"time"
 )
 
-var logs = make(map[string]*Log, 1000)
-var tidx = utils.NewTruncIndex()
-
 type State struct {
 	mu        sync.Mutex
 	result    chan error
@@ -41,21 +38,49 @@ type Log struct {
 }
 
 type RpcServer struct {
-	logs string // FIXME: no use here
+	logs map[string]*Log
+	tidx *utils.TruncIndex
+}
+
+func (rs *RpcServer) drain() {
+	var expire time.Duration
+	expire, err := time.ParseDuration(fsrv.Expire)
+	if err != nil {
+		panic(err)
+	}
+	for {
+		time.Sleep(5 * 60 * time.Second) // 5 mins
+		expireTime := time.Now().Add(-expire)
+		fmt.Println(expireTime)
+		for k, lg := range rs.logs {
+			if lg.Running == false && expireTime.After(lg.EndTime) {
+				rs.tidx.Delete(k)
+				delete(rs.logs, k)
+			}
+		}
+	}
+}
+func NewRpcServer() *RpcServer {
+	rs := &RpcServer{
+		logs: make(map[string]*Log, 1000),
+		tidx: utils.NewTruncIndex(),
+	}
+	go rs.drain()
+	return rs
 }
 
 func (rs *RpcServer) Run(r Container, w *Response) error {
 	cmd := exec.Command(r.Name, r.Args...)
 	cmd.Timeout = r.Timeout
 	cmd.IsClean = r.Kill
-	uid := tidx.New()
+	uid := rs.tidx.New()
 	var g = Log{}
 	g.State.result = make(chan error)
 	g.State.StartTime = time.Now()
 	cmd.Stdout = &g.Stdout
 	cmd.Stderr = &g.Stdout
 	g.Cmd = cmd
-	logs[uid] = &g
+	rs.logs[uid] = &g
 	err := cmd.Start()
 	g.Running = true
 	go func() {
@@ -71,20 +96,20 @@ func (rs *RpcServer) Run(r Container, w *Response) error {
 }
 
 func (rs *RpcServer) Kill(id string, w *Response) error {
-	uid, err := tidx.Get(id)
+	uid, err := rs.tidx.Get(id)
 	if err != nil {
 		return err
 	}
-	g := logs[uid]
+	g := rs.logs[uid]
 	return g.Cmd.KillAll()
 }
 
 func (rs *RpcServer) Wait(id string, w *Response) error {
-	uid, err := tidx.Get(id)
+	uid, err := rs.tidx.Get(id)
 	if err != nil {
 		return err
 	}
-	g := logs[uid]
+	g := rs.logs[uid]
 	err = g.Wait()
 
 	if err != nil {
@@ -104,7 +129,7 @@ func (rs *RpcServer) Ps(ids []string, out *[]PsResult) error {
 	// no input, ouput all
 	// FIXME: result not sorted
 	if len(ids) == 0 {
-		for uid, g := range logs {
+		for uid, g := range rs.logs {
 			pr := PsResult{}
 			pr.Name = g.Cmd.Args[0]
 			pr.Uid = uid
@@ -119,7 +144,7 @@ func (rs *RpcServer) Ps(ids []string, out *[]PsResult) error {
 	vis := make(map[string]bool)
 	*out = make([]PsResult, 0)
 	for _, id := range ids {
-		uid, err := tidx.Get(id)
+		uid, err := rs.tidx.Get(id)
 		if err != nil {
 			return err
 		}
@@ -127,7 +152,7 @@ func (rs *RpcServer) Ps(ids []string, out *[]PsResult) error {
 			continue
 		}
 		vis[uid] = true
-		g := logs[uid]
+		g := rs.logs[uid]
 		pr := PsResult{}
 		pr.Name = g.Cmd.Args[0]
 		pr.Uid = uid

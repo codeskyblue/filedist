@@ -36,12 +36,23 @@ func (idx *TruncIndex) Add(id string) error {
 	return nil
 }
 
+func randUuid() string {
+	chars := "abcdefghijklmnopqrstuvwxyz1234567890"
+	tot := len(chars)
+	s := make([]byte, 0, 10)
+	for i := 0; i < 10; i++ {
+		ch := chars[rand.Int()%tot]
+		s = append(s, ch)
+	}
+	return string(s)
+}
+
 // created by @shxsun. generate uniq id
 func (idx *TruncIndex) New() (id string) {
 	var err error
 	var uid string
 	for {
-		uid = fmt.Sprintf("%d", rand.Int())
+		uid = randUuid()
 		err = idx.Add(uid)
 		if err == nil {
 			break
