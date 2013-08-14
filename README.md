@@ -11,6 +11,12 @@ The name is "filedist".
 ## [client(fire)](fire/README.md)
 client - the very base tool
 
+## How to use
+1. Start fire at each client machine.
+2. Choose a origin file(eg: origin.com/home/work/origin.txt)
+3. Choose a destination(eg: /home/work/)
+4. Run command ./filedist --src=origin.com/home/work/origin.txt --dst=destination.com
+
 ## history
 - 2013-7-20 （没去成爬山，好遗憾啊） 客户端提供文件服务器和执行命令，两种基本功能
 - 2013-7-21  noahdes auto deploy fire script, (mkpkg.sh setup.sh)
